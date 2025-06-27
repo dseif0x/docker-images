@@ -4,9 +4,6 @@ on:
   push:
     branches:
       - main
-    paths:
-      - 'services/**'
-      - 'libs/**'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
@@ -78,7 +75,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ matrix.svc.name }}
+          images: ghcr.io/${{github.actor}}/${{ matrix.svc.name }}
           flavor: |
             latest=true
 
