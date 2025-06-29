@@ -36,8 +36,6 @@ RUN conda install -n base -c conda-forge nb_conda_kernels \
 WORKDIR ${HOME}
 USER ${NB_USER}
 
-COPY .condarc .
-
 EXPOSE 8888
 ENTRYPOINT ["tini", "--"]
 CMD ["jupyter", "lab"]
