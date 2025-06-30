@@ -19,6 +19,7 @@ RUN apt-get update \
         dnsutils \
         iputils-ping \
         tini \
+        build-essential \
         # requirement for nbgitpuller
         git \
  && rm -rf /var/lib/apt/lists/*
