@@ -1,6 +1,6 @@
 FROM golang:alpine AS builder
 WORKDIR $GOPATH/src/mypackage/myapp/
-COPY ./services/worker-email-sender/ .
+COPY . .
 RUN go get -d -v
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o /go/bin/worker-email-sender
 
