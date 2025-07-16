@@ -50,20 +50,41 @@ WORKDIR /app
 RUN git apply --reject --whitespace=fix service.patch
 
 
-FROM python:3.10-slim-bookworm
+# --- Stage 1: Build dependencies ---
+FROM python:3.10-slim-bookworm AS builder
 WORKDIR /app
 
-RUN apt update && apt install -y ffmpeg mkvtoolnix build-essential
-COPY --from=widefrog /app/requirements.txt /app
+# Install build tools only here
+RUN apt update && apt install -y build-essential
 
-RUN grep -v '^#' requirements.txt | xargs -n 1 pip install
+# Copy and install Python deps
+COPY --from=widefrog /app/requirements.txt /app
+RUN pip install --upgrade pip \
+ && grep -v '^#' requirements.txt | xargs -n 1 pip install
+
+# Upgrade urllib3 and install Playwright
 RUN pip install urllib3 --upgrade
 RUN playwright install
 
+
+# --- Stage 2: Final image ---
+FROM python:3.10-slim-bookworm
+WORKDIR /app
+
+# Only install runtime dependencies
+RUN apt update && apt install -y ffmpeg mkvtoolnix && apt clean && rm -rf /var/lib/apt/lists/*
+
+# Copy installed packages from builder
+COPY --from=builder /usr/local/lib/python3.10 /usr/local/lib/python3.10
+COPY --from=builder /usr/local/bin /usr/local/bin
+COPY --from=builder /usr/local/include /usr/local/include
+COPY --from=builder /usr/local/share /usr/local/share
 COPY --from=widefrog /app/ /app
 
+# Make scripts executable
 RUN chmod +x terminal/*
 
+# Copy binary tools from other images
 COPY --from=n_m3u8dl /app/N_m3u8DL-RE /usr/local/bin/N_m3u8DL-RE
 COPY --from=bento4 /app/Bento4/cmakebuild/mp4decrypt /usr/local/bin/mp4decrypt
 COPY --from=shaka-packager /app/shaka-packager /usr/local/bin/shaka-packager
