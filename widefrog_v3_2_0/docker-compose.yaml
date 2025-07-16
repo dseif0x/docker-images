@@ -1,0 +1,8 @@
+services:
+  widefrog:
+    build:
+      context: .
+    volumes:
+      - ./media:/app/media
+      - ./app_files:/app/app_files
+    command: sleep infinity

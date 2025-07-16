@@ -1,0 +1,41 @@
+diff --git a/services/plus_rtl_de.py b/services/plus_rtl_de.py
+old mode 100755
+new mode 100644
+index 4b244df..551d73a
+--- a/services/plus_rtl_de.py
++++ b/services/plus_rtl_de.py
+@@ -487,6 +487,34 @@ class plus_rtl_de(BaseService):
+             quality = variant["type"].lower().replace("dash", "")
+             video_contents.append((manifest, license_url, quality))
+ 
++        if len(video_contents) == 0:
++            response = json.loads(requests.get(
++                f'https://stus.player.streamingtech.de/watch-playout-variants/{graphql_id}?platform=web',
++                headers={'x-auth-token': plus_rtl_de.AUTH_TOKEN}).content.decode())
++            for variant in response:
++                license_url = None
++                for licence in variant["licenses"]:
++                    if "widevine" not in licence["type"].lower():
++                        continue
++                    license_url = licence["uri"]["href"]
++                    break
++                if license_url is None:
++                    continue
++
++                manifest = None
++                for source in variant["sources"]:
++                    if "main" not in source["priority"].lower():
++                        continue
++                    if ".mpd" not in source["url"]:
++                        continue
++                    manifest = source["url"]
++                    break
++                if manifest is None:
++                    continue
++
++                quality = variant["name"].lower().replace("dash", "")
++                video_contents.append((manifest, license_url, quality))
++
+         video_contents = sorted(
+             video_contents, key=lambda vc: plus_rtl_de.RES_PRIORITY[vc[2]], reverse=True
+         )[0]
