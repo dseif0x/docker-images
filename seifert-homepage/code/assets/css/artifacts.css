@@ -1,0 +1,33 @@
+#artifact1 {
+    top: -100px;
+    right: -100px;
+}
+
+#artifact1 polygon {
+    fill: #1FA184;
+}
+
+#artifact2 {
+    display: none;
+    top: 0;
+    left: 0;
+}
+
+#artifact2 polygon {
+    fill: #0F171B;
+}
+
+#artifact3 {
+    transform: rotate(180deg);
+    bottom: -100px;
+    left: -100px;
+}
+
+#artifact3 polygon {
+    fill: #1FA184;
+}
+
+.artifact {
+    position: fixed;
+    z-index: -1;
+}
