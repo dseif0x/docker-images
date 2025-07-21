@@ -24,8 +24,8 @@ else
 {
   "name": "$HOSTNAME",
   "tags": "k8s-node",
-  "timeout": 3600,
-  "grace": 600,
+  "timeout": 60,
+  "grace": 30,
   "project": "$PROJECT_SLUG"
 }
 EOF
@@ -36,5 +36,5 @@ fi
 while true; do
   echo "[$(date)] Pinging $PING_URL"
   curl -fsS --retry 3 "$PING_URL"
-  sleep 1800
+  sleep 30
 done
