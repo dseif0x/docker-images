@@ -3,7 +3,8 @@ set -e
 
 BASE_URL="${BASE_URL:-https://healthchecks.io/api/v3}"
 echo "Using Healthchecks.io base URL: $BASE_URL"
-HOSTNAME=$(hostname)
+HOSTNAME_RESULT=$(hostname)
+HOSTNAME="${HOSTNAME:-$HOSTNAME_RESULT}"
 API_KEY=$(cat /etc/healthchecks/api_token)
 PROJECT_SLUG="${PROJECT_SLUG:-k8s-homelab}"
 
