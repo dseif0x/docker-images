@@ -24,8 +24,8 @@ else
 {
   "name": "$HOSTNAME",
   "tags": "k8s-node",
-  "timeout": 60,
-  "grace": 30,
+  "timeout": 180,
+  "grace": 60,
   "project": "$PROJECT_SLUG"
 }
 EOF
