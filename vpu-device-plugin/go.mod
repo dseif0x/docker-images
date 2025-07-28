@@ -1,4 +1,4 @@
-module vpu-device-plugin
+module device-plugin
 
 go 1.24.0
 
