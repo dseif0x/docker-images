@@ -55,6 +55,13 @@ func (p *Plugin) Allocate(ctx context.Context, r *pluginapi.AllocateRequest) (*p
 				Permissions:   "rw", // Read and write permissions
 			}
 			car.Devices = append(car.Devices, dev)
+
+			dev1 := &pluginapi.DeviceSpec{
+				ContainerPath: cardPath,
+				HostPath:      cardPath,
+				Permissions:   "rw", // Read and write permissions
+			}
+			car.Devices = append(car.Devices, dev1)
 		}
 
 		response.ContainerResponses = append(response.ContainerResponses, &car)

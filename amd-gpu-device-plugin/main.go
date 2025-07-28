@@ -19,7 +19,7 @@ func main() {
 			return
 		}
 
-		lister.ResUpdateChan <- dpm.PluginNameList{"vpu"}
+		lister.ResUpdateChan <- dpm.PluginNameList{"gpu"}
 	}()
 
 	manager.Run()
