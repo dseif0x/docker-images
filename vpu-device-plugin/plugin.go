@@ -50,14 +50,12 @@ func (p *Plugin) Allocate(ctx context.Context, r *pluginapi.AllocateRequest) (*p
 			glog.Infof("Allocating device ID: %s", id)
 
 			for _, devicePath := range DevicePaths {
-				if id == devicePath {
-					dev := &pluginapi.DeviceSpec{
-						ContainerPath: devicePath,
-						HostPath:      devicePath,
-						Permissions:   "rw", // Read and write permissions
-					}
-					car.Devices = append(car.Devices, dev)
+				dev := &pluginapi.DeviceSpec{
+					ContainerPath: devicePath,
+					HostPath:      devicePath,
+					Permissions:   "rw", // Read and write permissions
 				}
+				car.Devices = append(car.Devices, dev)
 			}
 		}
 
