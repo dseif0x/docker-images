@@ -22,14 +22,11 @@ func (p *Plugin) PreStartContainer(ctx context.Context, r *pluginapi.PreStartCon
 }
 
 func (p *Plugin) ListAndWatch(e *pluginapi.Empty, s pluginapi.DevicePlugin_ListAndWatchServer) error {
-	var devices []*pluginapi.Device
-
-	for _, devicePath := range DevicePaths {
-		dev := pluginapi.Device{
-			ID:     devicePath,
+	devices := []*pluginapi.Device{
+		{
+			ID:     "rockchip.com/vpu",
 			Health: pluginapi.Healthy,
-		}
-		devices = append(devices, &dev)
+		},
 	}
 
 	err := s.Send(&pluginapi.ListAndWatchResponse{Devices: devices})
@@ -52,13 +49,16 @@ func (p *Plugin) Allocate(ctx context.Context, r *pluginapi.AllocateRequest) (*p
 		for _, id := range req.DevicesIDs {
 			glog.Infof("Allocating device ID: %s", id)
 
-			dev := &pluginapi.DeviceSpec{
-				ContainerPath: id,
-				HostPath:      id,
-				Permissions:   "rw", // Read and write permissions
+			for _, devicePath := range DevicePaths {
+				if id == devicePath {
+					dev := &pluginapi.DeviceSpec{
+						ContainerPath: devicePath,
+						HostPath:      devicePath,
+						Permissions:   "rw", // Read and write permissions
+					}
+					car.Devices = append(car.Devices, dev)
+				}
 			}
-
-			car.Devices = append(car.Devices, dev)
 		}
 
 		response.ContainerResponses = append(response.ContainerResponses, &car)
