@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: vpu-device-plugin
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      app: vpu-device-plugin
+  template:
+    metadata:
+      labels:
+        app: vpu-device-plugin
+    spec:
+      nodeSelector:
+        node-type: vpu
+      containers:
+        - name: amd-device-plugin
+          image: ghcr.io/dseif0x/amd-vpu-device-plugin:latest
+          imagePullPolicy: Always
+          securityContext:
+            privileged: true # Allows the container full access to host hardware
+          volumeMounts:
+            - name: device-plugin-dir
+              mountPath: /var/lib/kubelet/device-plugins # Required for device plugin Unix domain socket
+            - name: dev
+              mountPath: /dev # Grants access to the VPU device
+            - name: proc
+              mountPath: /proc # Grants access to /proc for hardware platform
+            - name: sys
+              mountPath: /sys # Grants access to /sys for driver version
+      volumes:
+        - name: device-plugin-dir
+          hostPath:
+            path: /var/lib/kubelet/device-plugins
+            type: Directory
+        - name: dev
+          hostPath:
+            path: /dev
+            type: Directory
+        - name: proc
+          hostPath:
+            path: /proc
+            type: Directory
+        - name: sys
+          hostPath:
+            path: /sys
+            type: Directory
+      restartPolicy: Always
