@@ -8,7 +8,7 @@ ARG TARGETARCH
 WORKDIR $GOPATH/src/mypackage/myapp/
 COPY ./ .
 RUN go get -d -v
-RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -ldflags="-w -s" -o /go/bin/whatsapp-reel-downloader
+RUN CGO_ENABLED=1 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -ldflags="-w -s" -o /go/bin/whatsapp-reel-downloader
 
 
 FROM alpine:latest
