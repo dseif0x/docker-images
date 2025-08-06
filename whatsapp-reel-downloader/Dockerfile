@@ -5,6 +5,8 @@ ARG BUILDPLATFORM
 ARG TARGETOS
 ARG TARGETARCH
 
+RUN apk add --no-cache --update gcc g++
+
 WORKDIR $GOPATH/src/mypackage/myapp/
 COPY ./ .
 RUN go get -d -v
