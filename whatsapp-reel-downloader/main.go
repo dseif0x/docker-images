@@ -23,12 +23,13 @@ type MessageHandler struct {
 	sender     *Sender
 	sourceChat string
 	targetChat string
+	allChats   bool
 }
 
 func (h *MessageHandler) eventHandler(evt interface{}) {
 	switch v := evt.(type) {
 	case *events.Message:
-		if v.Info.Chat.String() == h.sourceChat {
+		if h.allChats || v.Info.Chat.String() == h.sourceChat {
 			var link string
 			if strings.HasPrefix(v.Message.GetExtendedTextMessage().GetText(), "https://www.instagram.com/reel/") {
 				link = v.Message.GetExtendedTextMessage().GetText()
@@ -38,12 +39,17 @@ func (h *MessageHandler) eventHandler(evt interface{}) {
 				return
 			}
 			fmt.Println("Received an Instagram reel link '", link)
-			recipient, err := types.ParseJID(h.targetChat)
-			if err != nil {
-				fmt.Println("Error parsing target JID:", err)
-				return
+			recipient := v.Info.Chat
+			if !h.allChats {
+				var err error
+				recipient, err = types.ParseJID(h.targetChat)
+				if err != nil {
+					fmt.Println("Error parsing target JID:", err)
+					return
+				}
 			}
 			h.sender.SendReel(link, recipient)
+
 		}
 	}
 }
@@ -82,6 +88,9 @@ func main() {
 	client := whatsmeow.NewClient(deviceStore, clientLog)
 	sender := NewSender(client)
 	eventHandler := &MessageHandler{sender: sender, sourceChat: sourceChat, targetChat: targetChat}
+	if sourceChat == "" || targetChat == "" {
+		eventHandler.allChats = true
+	}
 
 	client.AddEventHandler(eventHandler.eventHandler)
 
