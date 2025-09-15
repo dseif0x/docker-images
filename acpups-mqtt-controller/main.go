@@ -112,6 +112,13 @@ func initMQTTClient() (mqtt.Client, error) {
 		opts.SetPassword(password)
 	}
 
+	opts.SetOnConnectHandler(func(client mqtt.Client) {
+		log.Println("Connected to MQTT broker")
+	})
+	opts.SetConnectionLostHandler(func(client mqtt.Client, err error) {
+		log.Printf("MQTT connection lost: %v", err)
+	})
+
 	client := mqtt.NewClient(opts)
 	if token := client.Connect(); token.Wait() && token.Error() != nil {
 		return nil, fmt.Errorf("failed to connect to MQTT broker: %w", token.Error())
