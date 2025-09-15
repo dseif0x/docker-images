@@ -14,4 +14,4 @@ RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -ldflags="-w -s
 FROM alpine:latest
 WORKDIR /go/bin
 COPY --from=builder /go/bin/acpups-mqtt /go/bin/acpups-mqtt
-ENTRYPOINT ["/go/bin/go-uploader"]
+ENTRYPOINT ["/go/bin/acpups-mqtt"]
