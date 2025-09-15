@@ -1,12 +1,17 @@
-FROM golang:alpine AS builder
+FROM --platform=${BUILDPLATFORM:-linux/amd64} golang:1.24.3-alpine3.21 AS builder
 
-WORKDIR /app
-COPY . .
+ARG TARGETPLATFORM
+ARG BUILDPLATFORM
+ARG TARGETOS
+ARG TARGETARCH
 
-RUN go install
+WORKDIR $GOPATH/src/mypackage/myapp/
+COPY ./ .
+RUN go get -d -v
+RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -ldflags="-w -s" -o /go/bin/acpups-mqtt
+
 
 FROM alpine:latest
-
-COPY --from=builder /go/bin/device-plugin /usr/local/bin/device-plugin
-
-ENTRYPOINT ["/usr/local/bin/device-plugin"]
+WORKDIR /go/bin
+COPY --from=builder /go/bin/acpups-mqtt /go/bin/acpups-mqtt
+ENTRYPOINT ["/go/bin/go-uploader"]
