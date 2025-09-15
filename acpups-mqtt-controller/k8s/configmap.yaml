@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: k8s-ups-drainer-config
+  namespace: default
+data:
+  MQTT_BROKER: "tcp://mqtt-broker:1883"
+  MQTT_CLIENT_ID: "k8s-ups-drainer"
+  MQTT_TOPIC: "ups/status"
+  BATTERY_DRAIN_THRESHOLD: "50"
