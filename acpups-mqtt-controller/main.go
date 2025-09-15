@@ -33,12 +33,14 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to initialize Kubernetes client: %v", err)
 	}
+	log.Println("Initializing Kubernetes Controllers")
 
 	// Initialize MQTT client
 	mqttClient, err := initMQTTClient()
 	if err != nil {
 		log.Fatalf("Failed to initialize MQTT client: %v", err)
 	}
+	log.Println("Connected to MQTT broker")
 
 	// Create node drainer
 	drainer := nodedrainer.New(k8sClient, mqttClient)
@@ -48,6 +50,7 @@ func main() {
 	if err := drainer.Subscribe(config); err != nil {
 		log.Fatalf("Failed to subscribe to MQTT: %v", err)
 	}
+	log.Println("Subscribed to UPS status updates")
 
 	// Wait for interrupt signal
 	c := make(chan os.Signal, 1)
