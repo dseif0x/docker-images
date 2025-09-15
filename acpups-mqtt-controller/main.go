@@ -105,7 +105,7 @@ func initMQTTClient() (mqtt.Client, error) {
 	opts.SetConnectRetry(true)
 	opts.SetConnectRetryInterval(5 * time.Second)
 
-	username := os.Getenv("MQTT_USERNAME")
+	username := os.Getenv("MQTT_USER")
 	password := os.Getenv("MQTT_PASSWORD")
 	if username != "" {
 		opts.SetUsername(username)

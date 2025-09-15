@@ -18,7 +18,7 @@ The application is configured via environment variables:
 - `MQTT_BROKER`: MQTT broker URL (default: `tcp://localhost:1883`)
 - `MQTT_CLIENT_ID`: MQTT client ID (default: `k8s-ups-drainer`)
 - `MQTT_TOPIC`: MQTT topic to subscribe to (default: `ups/status`)
-- `MQTT_USERNAME`: MQTT username (optional)
+- `MQTT_USER`: MQTT username (optional)
 - `MQTT_PASSWORD`: MQTT password (optional)
 - `BATTERY_DRAIN_THRESHOLD`: Battery level threshold for draining nodes (default: `50`, range: 1-100)
 - `KUBECONFIG`: Path to kubeconfig file (uses in-cluster config when running in K8s)
