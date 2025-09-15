@@ -15,9 +15,17 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 
 	"k8s-ups-drainer/pkg/nodedrainer"
+
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	// Load environment variables from .env file if present
+	err := godotenv.Load()
+	if err != nil {
+		log.Println("No .env file found, continuing...")
+	}
+
 	log.Println("Starting Kubernetes UPS Node Drainer")
 
 	// Initialize Kubernetes client
