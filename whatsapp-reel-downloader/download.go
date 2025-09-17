@@ -17,7 +17,7 @@ type IGDownloadResponse struct {
 
 // DownloadInstagramReelBytes downloads the Instagram reel video as a byte slice.
 func DownloadInstagramReelBytes(link string) ([]byte, string, error) {
-	apiURL := "https://instagram-reels-downloader-tau.vercel.app/api/video?postUrl=" + link
+	apiURL := "http://localhost:3000/api/video?postUrl=" + link
 
 	resp, err := http.Get(apiURL)
 	if err != nil {

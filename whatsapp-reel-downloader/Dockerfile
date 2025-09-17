@@ -7,8 +7,19 @@ COPY ./ .
 
 RUN CGO_ENABLED=1 go install
 
+FROM node:alpine as builder-node
+RUN apk add --no-cache git
+RUN git clone https://github.com/Okramjimmy/Instagram-reels-downloader.git
+WORKDIR /Instagram-reels-downloader
+
+RUN npm install
+RUN npm run build
+
 FROM alpine:latest
 
-COPY --from=builder /go/bin/whatsapp-reel-downloader /usr/local/bin/whatsapp-reel-downloader
+RUN apk add --no-cache nodejs npm dumb-init
 
-ENTRYPOINT ["/usr/local/bin/whatsapp-reel-downloader"]
+COPY --from=builder /go/bin/whatsapp-reel-downloader /usr/local/bin/whatsapp-reel-downloader
+COPY --from=builder-node /Instagram-reels-downloader/ /app/public
+
+ENTRYPOINT ["dumb-init", "--", "sh", "-lc", "(cd /app/public && npm run start) & exec /usr/local/bin/whatsapp-reel-downloader"]
