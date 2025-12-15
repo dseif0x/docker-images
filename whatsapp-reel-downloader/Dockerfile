@@ -8,7 +8,7 @@ COPY ./ .
 RUN CGO_ENABLED=1 go install
 
 FROM node:alpine AS builder-node
-RUN apk add --no-cache git
+RUN apk add --no-cache --no-scripts git
 RUN git clone https://github.com/Okramjimmy/Instagram-reels-downloader.git
 WORKDIR /Instagram-reels-downloader
 
