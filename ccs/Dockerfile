@@ -3,7 +3,7 @@ WORKDIR /ccs
 
 RUN apk add --no-cache git
 
-RUN git clone https://github.com/kaitranntt/ccs.git /ccs
+RUN git clone https://github.com/kaitranntt/ccs.git /ccs --branch=v7.52.2
 
 # =============================================================================
 # Build stage: compile TypeScript and build UI
