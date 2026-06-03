@@ -1,68 +1,47 @@
-# Builds WorldObservationLog/wrapper, a tool to decrypt Apple Music songs.
+# Packages WorldObservationLog/wrapper, a tool to decrypt Apple Music songs.
 #
-# Upstream keeps amd64 and arm64 on separate branches, each with its own
-# Android-target toolchain and its own bundled libraries:
-#   - linux/amd64 -> "main"  branch  (x86_64-linux-android22)
-#   - linux/arm64 -> "arm64" branch  (aarch64-linux-android22)
-# Both cross-compile with the linux-x86_64 Android NDK prebuilt, so the build
-# stage is pinned to linux/amd64 (where that NDK can run — natively on an amd64
-# builder, or emulated on an arm64 one) while only the runtime stage matches the
-# requested target platform. This keeps a true multi-arch image without making
-# the build depend on the builder's architecture.
-ARG NDK_VERSION=23
+# Upstream's from-source build pins Dobby to a moving `master` that currently
+# fails to link (undefined __android_log_vprint), which breaks upstream's own
+# CI for both architectures. Instead we use upstream's official prebuilt
+# release artifacts — the same "prebuild" path their own Dockerfile supports.
+# amd64 and arm64 ship as separate per-arch releases, each bundling the wrapper
+# launcher plus the proprietary rootfs libraries (which cannot be built from
+# source in any case).
+#
+# Override these ARGs to pin a different upstream release.
+ARG WRAPPER_AMD64_TAG=wrapper.x86_64.latest
+ARG WRAPPER_AMD64_ASSET=Wrapper.x86_64.latest.zip
+ARG WRAPPER_ARM64_TAG=wrapper.arm64.latest
+ARG WRAPPER_ARM64_ASSET=Wrapper.arm64.latest.zip
 
-FROM --platform=linux/amd64 debian:13.2 AS build
-ARG NDK_VERSION
+# Fetch runs on the native builder (no compilation, just download + unzip); the
+# downloaded artifact is selected by the target architecture.
+FROM --platform=$BUILDPLATFORM debian:13.2 AS fetch
 ARG TARGETARCH
-SHELL ["/bin/bash", "-c"]
+ARG WRAPPER_AMD64_TAG WRAPPER_AMD64_ASSET WRAPPER_ARM64_TAG WRAPPER_ARM64_ASSET
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ca-certificates curl unzip && \
+    rm -rf /var/lib/apt/lists/*
 WORKDIR /app
-
-RUN --mount=type=cache,target=/var/lib/apt,sharing=locked \
-    --mount=type=cache,target=/var/cache/apt,sharing=locked \
-    apt-get update && \
-    apt-get install -y \
-        build-essential cmake unzip git wget ca-certificates lsb-release gnupg aria2 && \
-    if [ "$TARGETARCH" = "arm64" ]; then \
-        apt-get install -y gcc-aarch64-linux-gnu; \
-    fi
-
-# Clone the upstream branch matching the target architecture.
-RUN case "$TARGETARCH" in \
-        amd64) BRANCH=main ;; \
-        arm64) BRANCH=arm64 ;; \
+RUN set -eux; \
+    case "$TARGETARCH" in \
+        amd64) TAG="$WRAPPER_AMD64_TAG"; ASSET="$WRAPPER_AMD64_ASSET" ;; \
+        arm64) TAG="$WRAPPER_ARM64_TAG"; ASSET="$WRAPPER_ARM64_ASSET" ;; \
         *) echo "Unsupported TARGETARCH: $TARGETARCH" >&2; exit 1 ;; \
-    esac && \
-    git clone --depth 1 --branch "$BRANCH" \
-        https://github.com/WorldObservationLog/wrapper.git /app
-
-# Host clang/LLVM toolchain used during the build.
-RUN bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)"
-
-# Android NDK r23b (linux-x86_64 prebuilt) — CMakeLists.txt expects it next to
-# the sources and cross-compiles to this arch's Android target.
-RUN aria2c -o android-ndk.zip \
-        "https://dl.google.com/android/repository/android-ndk-r${NDK_VERSION}b-linux.zip" && \
-    unzip -q -d /app android-ndk.zip && \
-    rm android-ndk.zip
-
-# Upstream pins Dobby to a moving `master`, whose logging backend references
-# __android_log_vprint. `main` already finds liblog, but the NDK linker's
-# default --as-needed drops it before that reference (pulled late from the
-# static libdobby.a) is resolved. Re-link liblog last and force-kept so the
-# symbol resolves. The bundled liblog.so exports it on both branches.
-RUN echo 'target_link_libraries(main PRIVATE -Wl,--no-as-needed log)' >> /app/CMakeLists.txt
-
-RUN mkdir -p build && \
-    cmake -S /app -B /app/build && \
-    cmake --build /app/build -j"$(nproc)"
+    esac; \
+    curl -fsSL -o /tmp/wrapper.zip \
+        "https://github.com/WorldObservationLog/wrapper/releases/download/${TAG}/${ASSET}"; \
+    unzip -q /tmp/wrapper.zip -d /app; \
+    rm /tmp/wrapper.zip; \
+    test -f /app/wrapper && test -d /app/rootfs && test -f /app/entrypoint.sh
 
 FROM debian:13.2
 
 WORKDIR /app
-COPY --from=build /app/wrapper /app/wrapper
-COPY --from=build /app/rootfs /app/rootfs
-COPY --from=build /app/entrypoint.sh /app/entrypoint.sh
-RUN chmod +x /app/entrypoint.sh /app/wrapper
+COPY --from=fetch /app/wrapper /app/wrapper
+COPY --from=fetch /app/rootfs /app/rootfs
+COPY --from=fetch /app/entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/wrapper /app/entrypoint.sh
 
 # 10020 decrypt, 20020 M3U8, 30020 account.
 EXPOSE 10020 20020 30020

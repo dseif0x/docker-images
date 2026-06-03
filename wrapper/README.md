@@ -4,11 +4,17 @@ Container image for [WorldObservationLog/wrapper](https://github.com/WorldObserv
 a tool to decrypt Apple Music songs. An active Apple Music subscription is
 required.
 
-The image clones and builds the upstream sources with the Android NDK r23b
-toolchain. Both `linux/amd64` and `linux/arm64` are supported: upstream keeps
-the two architectures on separate branches (`main` for x86_64, `arm64` for
-aarch64), each with its own Android-target toolchain and bundled libraries, so
-the Dockerfile clones the branch matching the build's target architecture.
+The image is assembled from upstream's official **prebuilt release artifacts**
+rather than compiled from source. Upstream's from-source build pins Dobby to a
+moving `master` that currently fails to link, breaking their own CI; the
+prebuilt path (which their own Dockerfile supports) avoids that and also skips
+the heavy Android NDK build. Both `linux/amd64` and `linux/arm64` are supported
+— upstream publishes a separate per-arch release, and the Dockerfile downloads
+the one matching the build's target architecture.
+
+The release tags are overridable via build args (`WRAPPER_AMD64_TAG`,
+`WRAPPER_AMD64_ASSET`, `WRAPPER_ARM64_TAG`, `WRAPPER_ARM64_ASSET`) if you need
+to pin a specific upstream release.
 
 ## Ports
 
