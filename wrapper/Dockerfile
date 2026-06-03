@@ -28,8 +28,8 @@ RUN --mount=type=cache,target=/var/lib/apt,sharing=locked \
 
 # Clone the upstream branch matching the target architecture.
 RUN case "$TARGETARCH" in \
-        amd64) BRANCH=main ;; \
-        arm64) BRANCH=arm64 ;; \
+        amd64) BRANCH=wrapper.x86_64.latest ;; \
+        arm64) BRANCH=wrapper.arm64.latest ;; \
         *) echo "Unsupported TARGETARCH: $TARGETARCH" >&2; exit 1 ;; \
     esac && \
     git clone --depth 1 --branch "$BRANCH" \
