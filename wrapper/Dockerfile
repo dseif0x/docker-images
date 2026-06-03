@@ -45,6 +45,13 @@ RUN aria2c -o android-ndk.zip \
     unzip -q -d /app android-ndk.zip && \
     rm android-ndk.zip
 
+# Upstream pins Dobby to a moving `master`, whose logging backend references
+# __android_log_vprint. `main` already finds liblog, but the NDK linker's
+# default --as-needed drops it before that reference (pulled late from the
+# static libdobby.a) is resolved. Re-link liblog last and force-kept so the
+# symbol resolves. The bundled liblog.so exports it on both branches.
+RUN echo 'target_link_libraries(main PRIVATE -Wl,--no-as-needed log)' >> /app/CMakeLists.txt
+
 RUN mkdir -p build && \
     cmake -S /app -B /app/build && \
     cmake --build /app/build -j"$(nproc)"
