@@ -5,11 +5,13 @@
 #   - linux/amd64 -> "main"  branch  (x86_64-linux-android22)
 #   - linux/arm64 -> "arm64" branch  (aarch64-linux-android22)
 # Both cross-compile with the linux-x86_64 Android NDK prebuilt, so the build
-# stage always runs on the native builder ($BUILDPLATFORM) and only the runtime
-# stage matches the requested target platform.
+# stage is pinned to linux/amd64 (where that NDK can run — natively on an amd64
+# builder, or emulated on an arm64 one) while only the runtime stage matches the
+# requested target platform. This keeps a true multi-arch image without making
+# the build depend on the builder's architecture.
 ARG NDK_VERSION=23
 
-FROM --platform=$BUILDPLATFORM debian:13.2 AS build
+FROM --platform=linux/amd64 debian:13.2 AS build
 ARG NDK_VERSION
 ARG TARGETARCH
 SHELL ["/bin/bash", "-c"]
