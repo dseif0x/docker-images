@@ -35,7 +35,14 @@ jobs:
           for svc in $changed; do
             # Check if the svc actually has a Dockerfile
             if [ -f "$svc/Dockerfile" ]; then
-              matrix_entries=$(jq -c --arg name "$svc" --arg path "$svc" '. + [{name: $name, path: $path}]' <<< "$matrix_entries")
+              # A service may pin its build platforms via an optional
+              # .docker-platforms file (e.g. when its base image is single-arch).
+              # Defaults to multi-arch when the file is absent.
+              platforms="linux/amd64,linux/arm64"
+              if [ -f "$svc/.docker-platforms" ]; then
+                platforms=$(tr -d '[:space:]' < "$svc/.docker-platforms")
+              fi
+              matrix_entries=$(jq -c --arg name "$svc" --arg path "$svc" --arg platforms "$platforms" '. + [{name: $name, path: $path, platforms: $platforms}]' <<< "$matrix_entries")
             fi
           done
 
@@ -82,7 +89,7 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
-          platforms: linux/amd64,linux/arm64
+          platforms: ${{ matrix.svc.platforms }}
           context: ${{ matrix.svc.path }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
