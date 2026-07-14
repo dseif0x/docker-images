@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"syscall"
 
@@ -20,10 +21,11 @@ import (
 )
 
 type MessageHandler struct {
-	sender     *Sender
-	sourceChat string
-	targetChat string
-	allChats   bool
+	sender        *Sender
+	sourceChat    string
+	targetChat    string
+	allChats      bool
+	enableGroups bool
 }
 
 func (h *MessageHandler) eventHandler(evt interface{}) {
@@ -48,6 +50,10 @@ func (h *MessageHandler) eventHandler(evt interface{}) {
 					return
 				}
 			}
+			if !h.enableGroups && recipient.Server == types.GroupServer {
+				fmt.Println("Group sending is disabled, skipping message to", recipient.String())
+				return
+			}
 			h.sender.SendReel(link, recipient)
 
 		}
@@ -62,9 +68,11 @@ func main() {
 
 	sourceChat := os.Getenv("SOURCE_CHAT")
 	targetChat := os.Getenv("TARGET_CHAT")
+	enableGroups, _ := strconv.ParseBool(os.Getenv("ENABLE_GROUP_SENDING"))
 
 	fmt.Println("Source chat:", sourceChat)
 	fmt.Println("Target chat:", targetChat)
+	fmt.Println("Group sending enabled:", enableGroups)
 
 	dbLog := waLog.Stdout("Database", "DEBUG", true)
 	ctx := context.Background()
@@ -87,7 +95,7 @@ func main() {
 	clientLog := waLog.Stdout("Client", "INFO", true)
 	client := whatsmeow.NewClient(deviceStore, clientLog)
 	sender := NewSender(client)
-	eventHandler := &MessageHandler{sender: sender, sourceChat: sourceChat, targetChat: targetChat}
+	eventHandler := &MessageHandler{sender: sender, sourceChat: sourceChat, targetChat: targetChat, enableGroups: enableGroups}
 	if sourceChat == "" || targetChat == "" {
 		eventHandler.allChats = true
 	}
