@@ -46,16 +46,26 @@ type apiMediaInfoResponse struct {
 
 // DownloadInstagramReelBytes downloads the Instagram reel video as a byte slice.
 func DownloadInstagramReelBytes(link string) ([]byte, string, error) {
-	shortcode, err := extractShortcode(link)
-	if err != nil {
-		return nil, "", err
-	}
-
 	jar, err := cookiejar.New(nil)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to create cookie jar: %w", err)
 	}
 	client := &http.Client{Jar: jar, Timeout: 60 * time.Second}
+
+	// /share/ links carry a share id, not the shortcode; follow the redirect.
+	if strings.Contains(link, "/share/") {
+		resolved, err := resolveShareLink(client, link)
+		if err != nil {
+			return nil, "", err
+		}
+		fmt.Println("Resolved share link to", resolved)
+		link = resolved
+	}
+
+	shortcode, err := extractShortcode(link)
+	if err != nil {
+		return nil, "", err
+	}
 
 	videoURL, err := resolveVideoURL(client, shortcode)
 	if err != nil {
@@ -68,6 +78,29 @@ func DownloadInstagramReelBytes(link string) ([]byte, string, error) {
 	}
 
 	return videoBytes, shortcode + ".mp4", nil
+}
+
+// resolveShareLink follows the redirects of an instagram.com/share/... link
+// and returns the final URL (the real /reel/<shortcode>/ page).
+func resolveShareLink(client *http.Client, link string) (string, error) {
+	req, err := http.NewRequest(http.MethodGet, link, nil)
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("User-Agent", browserUserAgent)
+	if sessionID := os.Getenv("IG_SESSION_ID"); sessionID != "" {
+		req.AddCookie(&http.Cookie{Name: "sessionid", Value: sessionID})
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("resolving share link: %w", err)
+	}
+	resp.Body.Close()
+	final := resp.Request.URL.String()
+	if strings.Contains(final, "/share/") {
+		return "", fmt.Errorf("share link did not redirect to a reel: %s", final)
+	}
+	return final, nil
 }
 
 func extractShortcode(link string) (string, error) {

@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"regexp"
 	"strconv"
 	"strings"
 	"syscall"
@@ -21,10 +22,10 @@ import (
 )
 
 type MessageHandler struct {
-	sender        *Sender
-	sourceChat    string
-	targetChat    string
-	allChats      bool
+	sender       *Sender
+	sourceChat   string
+	targetChat   string
+	allChats     bool
 	enableGroups bool
 }
 
@@ -32,12 +33,12 @@ func (h *MessageHandler) eventHandler(evt interface{}) {
 	switch v := evt.(type) {
 	case *events.Message:
 		if h.allChats || v.Info.Chat.String() == h.sourceChat {
-			var link string
-			if strings.HasPrefix(v.Message.GetExtendedTextMessage().GetText(), "https://www.instagram.com/reel/") {
-				link = v.Message.GetExtendedTextMessage().GetText()
-			} else if strings.HasPrefix(v.Message.GetConversation(), "https://www.instagram.com/reel/") {
-				link = v.Message.GetConversation()
-			} else {
+			text := messageText(v)
+			link := findReelLink(text)
+			if link == "" {
+				if strings.Contains(text, "instagram.com") {
+					fmt.Printf("Ignored an Instagram link that is not a reel/post: %q\n", text)
+				}
 				return
 			}
 			fmt.Println("Received an Instagram reel link '", link)
@@ -58,6 +59,36 @@ func (h *MessageHandler) eventHandler(evt interface{}) {
 
 		}
 	}
+}
+
+// messageText returns the text of a message: a plain message, a message with
+// a link preview, or the caption of an image or video.
+func messageText(v *events.Message) string {
+	m := v.Message
+	for _, t := range []string{
+		m.GetConversation(),
+		m.GetExtendedTextMessage().GetText(),
+		m.GetImageMessage().GetCaption(),
+		m.GetVideoMessage().GetCaption(),
+	} {
+		if t != "" {
+			return t
+		}
+	}
+	return ""
+}
+
+// reelLinkRegex finds an Instagram reel/post link anywhere in a text, with or
+// without www./m., including /share/ links (resolved by a redirect later).
+var reelLinkRegex = regexp.MustCompile(`(?i)(?:https?://)?(?:www\.|m\.)?instagram\.com/(?:share/)?(?:[A-Za-z0-9_.]+/)?(?:reels?|p|tv)/[A-Za-z0-9_-]+[^\s]*`)
+
+// findReelLink returns the first Instagram reel/post link in text, or "".
+func findReelLink(text string) string {
+	link := reelLinkRegex.FindString(text)
+	if link != "" && !strings.HasPrefix(strings.ToLower(link), "http") {
+		link = "https://" + link
+	}
+	return link
 }
 
 func main() {
